@@ -4,31 +4,19 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hashicorp/go-hclog"
+//	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/hcl"
 	"github.com/spiffe/spire-plugin-sdk/pluginmain"
-	"github.com/spiffe/spire-plugin-sdk/pluginsdk"
+	//"github.com/spiffe/spire-plugin-sdk/pluginsdk"
 	credentialcomposerv1 "github.com/spiffe/spire-plugin-sdk/proto/spire/plugin/server/credentialcomposer/v1"
 	configv1 "github.com/spiffe/spire-plugin-sdk/proto/spire/service/common/config/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var (
-	// This compile-time assertion ensures the plugin conforms properly to the
-	// pluginsdk.NeedsLogger interface.
-	// TODO: Remove if the plugin does not need the logger.
-	_ pluginsdk.NeedsLogger = (*Plugin)(nil)
-
-	// This compile-time assertion ensures the plugin conforms properly to the
-	// pluginsdk.NeedsHostServices interface.
-	// TODO: Remove if the plugin does not need host services.
-	_ pluginsdk.NeedsHostServices = (*Plugin)(nil)
-)
-
 // Config defines the configuration for the plugin.
-// TODO: Add relevant configurables or remove if no configuration is required.
 type Config struct {
+	MySPIFFEIDUserPrefixes []string `hcl:"my_spiffe_id_user_prefixes"`
 }
 
 // Plugin implements the CredentialComposer plugin
@@ -37,17 +25,11 @@ type Plugin struct {
 	credentialcomposerv1.UnimplementedCredentialComposerServer
 
 	// UnimplementedConfigServer is embedded to satisfy gRPC
-	// TODO: Remove if this plugin does not require configuration
 	configv1.UnimplementedConfigServer
 
 	// Configuration should be set atomically
-	// TODO: Remove if this plugin does not require configuration
 	configMtx sync.RWMutex
 	config    *Config
-
-	// The logger received from the framework via the SetLogger method
-	// TODO: Remove if this plugin does not need the logger.
-	logger hclog.Logger
 }
 
 // ComposeServerX509CA implements the CredentialComposer ComposeServerX509CA RPC. Composes the SPIRE Server X509 CA.
@@ -55,16 +37,6 @@ type Plugin struct {
 // NOT_IMPLEMENTED, the server will apply the default attributes. Otherwise, the returned attributes are used.
 // If a CA is produced that does not conform to the SPIFFE X509-SVID specification for signing certificates, it will be rejected.
 func (p *Plugin) ComposeServerX509CA(ctx context.Context, req *credentialcomposerv1.ComposeServerX509CARequest) (*credentialcomposerv1.ComposeServerX509CAResponse, error) {
-	config, err := p.getConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Implement the RPC behavior. The following line silences compiler
-	// warnings and can be removed once the configuration is referenced by the
-	// implementation.
-	config = config
-
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -74,16 +46,6 @@ func (p *Plugin) ComposeServerX509CA(ctx context.Context, req *credentialcompose
 // used. If an X509-SVID is produced that does not conform to the SPIFFE X509-SVID specification for leaf certificates,
 // it will be rejected. This function cannot be used to modify the SPIFFE ID of the X509-SVID.
 func (p *Plugin) ComposeServerX509SVID(ctx context.Context, req *credentialcomposerv1.ComposeServerX509SVIDRequest) (*credentialcomposerv1.ComposeServerX509SVIDResponse, error) {
-	config, err := p.getConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Implement the RPC behavior. The following line silences compiler
-	// warnings and can be removed once the configuration is referenced by the
-	// implementation.
-	config = config
-
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -93,16 +55,6 @@ func (p *Plugin) ComposeServerX509SVID(ctx context.Context, req *credentialcompo
 // If an X509-SVID is produced that does not conform to the SPIFFE X509-SVID specification for leaf certificates, it will
 // be rejected. This function cannot be used to modify the SPIFFE ID of the X509-SVID.
 func (p *Plugin) ComposeAgentX509SVID(ctx context.Context, req *credentialcomposerv1.ComposeAgentX509SVIDRequest) (*credentialcomposerv1.ComposeAgentX509SVIDResponse, error) {
-	config, err := p.getConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Implement the RPC behavior. The following line silences compiler
-	// warnings and can be removed once the configuration is referenced by the
-	// implementation.
-	config = config
-
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -112,18 +64,102 @@ func (p *Plugin) ComposeAgentX509SVID(ctx context.Context, req *credentialcompos
 // If an X509-SVID is produced that does not conform to the SPIFFE X509-SVID specification for leaf certificates, it will
 // be rejected. This function cannot be used to modify the SPIFFE ID of the X509-SVID.
 func (p *Plugin) ComposeWorkloadX509SVID(ctx context.Context, req *credentialcomposerv1.ComposeWorkloadX509SVIDRequest) (*credentialcomposerv1.ComposeWorkloadX509SVIDResponse, error) {
+	// we may not need to configure this plugin.
+	/*
 	config, err := p.getConfig()
 	if err != nil {
 		return nil, err
 	}
+	*/
 
-	// TODO: Implement the RPC behavior. The following line silences compiler
-	// warnings and can be removed once the configuration is referenced by the
-	// implementation.
-	config = config
-	p.logger.Info("using ###### sudi composeworkloadjwtsvid ######### plugin")
+	/*
+	// Extract SPIFFE ID Path from request
+	spiffeIDRaw := req.GetSpiffeId()
+	spiffeID, err := spiffeid.FromString(spiffeIDRaw)
+	if err != nil {
+		return nil, err
+	}
+	//path := spiffeID.Path()
 
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	*/
+/*
+
+	// to start you may just have a simple db that 1 to 1 maps IAM roles <-> SPIFFE IDs, and based on the roles you pick specific attributes to populate the certificates with
+	// it could simply just be a harcoded list here for demo
+
+	// these are 4 examples of how to compose the certificates based on what we need
+
+	principalNameOID := "1.3.6.1.4.1.311.20.2.3" // is is microsoft's OID for UPNs.
+	principalNameValue := "bob@woodgrove.com"    // This should be extracted or composed dynamically based on your requirements
+
+	resp := &credentialcomposerv1.ComposeWorkloadX509SVIDResponse{
+		Attributes: &credentialcomposerv1.X509SVIDAttributes{
+			Subject: &credentialcomposerv1.DistinguishedName{
+				// Populate other fields as necessary
+			},
+			ExtraExtensions: []credentialcomposerv1.AttributeTypeAndValue{
+				{
+					Oid:      principalNameOID,
+					Value:    []byte(principalNameValue), // Value should be encoded as required by the specification
+					Critical: false,
+				},
+			},
+		},
+	}
+
+*/
+	// this is probably the easiest to use.
+	rfc822NameValue := "devup-app@sudeeptoroygmail.onmicrosoft.com"
+
+	/*
+	resp2 := &credentialcomposerv1.ComposeWorkloadX509SVIDResponse{
+		Attributes: &credentialcomposerv1.X509SVIDAttributes{
+			DnsSans: []string{rfc822NameValue},
+		},
+	}
+	*/
+	
+	req.Attributes.DnsSans = []string{rfc822NameValue}
+	resp2 := &credentialcomposerv1.ComposeWorkloadX509SVIDResponse{
+		Attributes: req.Attributes,
+	}
+	/* 
+	req.Attributes.Attributes.ExtraExtensions.Id[]
+		return &credentialcomposerv1.ComposeWorkloadJWTSVIDResponse{
+					Attributes: req.Attributes,
+						}, nil
+						*/
+/*
+	skiOID := "2.5.29.14"
+	skiValue := "123456789abcdef" // This value would typically be a hash of the public key
+	resp3 := &credentialcomposerv1.ComposeWorkloadX509SVIDResponse{
+		Attributes: &credentialcomposerv1.X509SVIDAttributes{
+			ExtraExtensions: []credentialcomposerv1.X509Extension{
+				{
+					Oid:      skiOID,
+					Value:    []byte(skiValue), // The actual SKI value
+					Critical: false,
+				},
+			},
+		},
+	}
+
+	sha1PublicKeyOID := "1.3.6.1.4.1.99999.2.1.1"
+	sha1PublicKeyValue := "123456789abcdef" // The SHA-1 hash of the public key
+	resp4 := &credentialcomposerv1.ComposeWorkloadX509SVIDResponse{
+		Attributes: &credentialcomposerv1.X509SVIDAttributes{
+			ExtraExtensions: []credentialcomposerv1.X509Extension{
+				{
+					Oid:      sha1PublicKeyOID,
+					Value:    []byte(sha1PublicKeyValue), // The actual SHA-1 public key value
+					Critical: false,
+				},
+			},
+		},
+	}
+*/
+	// we only need to use one method.  Pick the one that works best for you
+	return resp2, nil
 }
 
 // ComposeWorkloadJWTSVID implements the CredentialComposer ComposeWorkloadJWTSVID RPC. Composes workload JWT-SVIDs.
@@ -132,53 +168,23 @@ func (p *Plugin) ComposeWorkloadX509SVID(ctx context.Context, req *credentialcom
 // If a JWT-SVID is produced that does not conform to the SPIFFE JWT-SVID specification, it will be rejected.
 // This function cannot be used to modify the SPIFFE ID of the JWT-SVID.
 func (p *Plugin) ComposeWorkloadJWTSVID(ctx context.Context, req *credentialcomposerv1.ComposeWorkloadJWTSVIDRequest) (*credentialcomposerv1.ComposeWorkloadJWTSVIDResponse, error) {
-	config, err := p.getConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Implement the RPC behavior. The following line silences compiler
-	// warnings and can be removed once the configuration is referenced by the
-	// implementation.
-	config = config
-
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
 // Configure configures the plugin. This is invoked by SPIRE when the plugin is
 // first loaded. In the future, it may be invoked to reconfigure the plugin.
 // As such, it should replace the previous configuration atomically.
-// TODO: Remove if no configuration is required
 func (p *Plugin) Configure(ctx context.Context, req *configv1.ConfigureRequest) (*configv1.ConfigureResponse, error) {
 	config := new(Config)
 	if err := hcl.Decode(config, req.HclConfiguration); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to decode configuration: %v", err)
 	}
 
-	// TODO: Validate configuration before setting/replacing existing
-	// configuration
-
 	p.setConfig(config)
 	return &configv1.ConfigureResponse{}, nil
 }
 
-// BrokerHostServices is called by the framework when the plugin is loaded to
-// give the plugin a chance to obtain clients to SPIRE host services.
-// TODO: Remove if the plugin does not need host services.
-func (p *Plugin) BrokerHostServices(broker pluginsdk.ServiceBroker) error {
-	// TODO: Use the broker to obtain host service clients
-	return nil
-}
-
-// SetLogger is called by the framework when the plugin is loaded and provides
-// the plugin with a logger wired up to SPIRE's logging facilities.
-// TODO: Remove if the plugin does not need the logger.
-func (p *Plugin) SetLogger(logger hclog.Logger) {
-	p.logger = logger
-}
-
 // setConfig replaces the configuration atomically under a write lock.
-// TODO: Remove if no configuration is required
 func (p *Plugin) setConfig(config *Config) {
 	p.configMtx.Lock()
 	p.config = config
@@ -186,12 +192,11 @@ func (p *Plugin) setConfig(config *Config) {
 }
 
 // getConfig gets the configuration under a read lock.
-// TODO: Remove if no configuration is required
 func (p *Plugin) getConfig() (*Config, error) {
 	p.configMtx.RLock()
 	defer p.configMtx.RUnlock()
 	if p.config == nil {
-		//return nil, status.Error(codes.FailedPrecondition, "not configured")
+		return nil, status.Error(codes.FailedPrecondition, "not configured")
 	}
 	return p.config, nil
 }
@@ -202,7 +207,7 @@ func main() {
 	// failure to serve, the process will exit with a non-zero exit code.
 	pluginmain.Serve(
 		credentialcomposerv1.CredentialComposerPluginServer(plugin),
-		// TODO: Remove if no configuration is required
-		// configv1.ConfigServiceServer(plugin),
+		configv1.ConfigServiceServer(plugin),
 	)
 }
+

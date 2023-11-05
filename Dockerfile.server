@@ -7,9 +7,9 @@ WORKDIR /go/src/github.com/sudeepto/credentialcomposer
 COPY go.mod go.sum .
 RUN go mod download
 COPY cmd cmd
-RUN go build -o /dbcredentialcomposer ./cmd/plugin/credentialcomposer/dbcredentialcomposer
-RUN sha256sum /dbcredentialcomposer > 1.txt
+RUN go build -o /x509credentialcomposer ./cmd/plugin/credentialcomposer/x509credentialcomposer
+RUN sha256sum /x509credentialcomposer > 1.txt
 RUN cat 1.txt
 
 FROM ghcr.io/spiffe/spire-server:1.7.2 AS base
-COPY --link --from=builder --chown=1000:1000 --chmod=0755 /dbcredentialcomposer /opt/spire/bin
+COPY --link --from=builder --chown=1000:1000 --chmod=0755 /x509credentialcomposer /opt/spire/bin
