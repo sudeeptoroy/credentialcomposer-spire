@@ -109,7 +109,7 @@ func (p *Plugin) ComposeWorkloadX509SVID(ctx context.Context, req *credentialcom
 
 */
 	// this is probably the easiest to use.
-	rfc822NameValue := "devup-app@sudeeptoroygmail.onmicrosoft.com"
+	rfc822NameValue := "<id>.onmicrosoft.com"
 
 	/*
 	resp2 := &credentialcomposerv1.ComposeWorkloadX509SVIDResponse{
