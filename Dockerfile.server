@@ -12,4 +12,4 @@ RUN sha256sum /dbcredentialcomposer > 1.txt
 RUN cat 1.txt
 
 FROM ghcr.io/spiffe/spire-server:1.7.2 AS base
-COPY --link --from=builder --chown=1000:1000 --chmod=755 /dbcredentialcomposer /opt/spire/bin
+COPY --link --from=builder --chown=1000:1000 --chmod=0755 /dbcredentialcomposer /opt/spire/bin

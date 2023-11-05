@@ -1,4 +1,4 @@
-package credentialcomposer
+package main
 
 import (
 	"context"
@@ -121,6 +121,7 @@ func (p *Plugin) ComposeWorkloadX509SVID(ctx context.Context, req *credentialcom
 	// warnings and can be removed once the configuration is referenced by the
 	// implementation.
 	config = config
+	p.logger.Info("using ###### sudi composeworkloadjwtsvid ######### plugin")
 
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
@@ -190,7 +191,7 @@ func (p *Plugin) getConfig() (*Config, error) {
 	p.configMtx.RLock()
 	defer p.configMtx.RUnlock()
 	if p.config == nil {
-		return nil, status.Error(codes.FailedPrecondition, "not configured")
+		//return nil, status.Error(codes.FailedPrecondition, "not configured")
 	}
 	return p.config, nil
 }
